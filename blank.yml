@@ -1,0 +1,91 @@
+＃这是基本的工作流程，可帮助您开始使用操作
+
+名称：SGSI_Build
+
+于：
+  观看：
+    类型：[开始]
+    
+env：              
+  ROM_URL：' https : //hugeota.d.miui.com/21.4.23/miui_STAR_21.4.23_32ae969a59_11.0.zip '
+  ZIP_NAME：“ update.zip ”
+  OS_TYPE：“像素”
+  BUILD_TYPE：“ ab ”
+  REPACK_NAME：“ SGSI.zip ”
+  版本：“ 12 ”
+  upload_WeTransfer：“ true ”
+  upload_action-gh-release：' false '
+  设置：' true '
+  
+职位：
+  建立：
+    运行：ubuntu-latest
+
+    步骤：
+       -名称：结帐
+         用途：actions / checkout @ main
+       
+       -名称：清理
+         运行：|       
+           docker rmi`docker images -q`
+           须藤rm -rf / usr / share / dotnet / etc / mysql / etc / php /etc/apt/sources.list.d
+           须藤-E apt-get -y清除azure-cli ghc * zulu * hhvm llvm * firefox google * dotnet * powershell openjdk * mysql * php *
+           sudo -E apt-get更新
+           须藤-E apt-get -y autoremove --purge
+           须藤-E apt-get clean
+           df -h
+           
+       -名称：设置调味料
+         运行：|
+            须藤apt-get install -y git wget git zip unzip curl axel
+       -名称：克隆...
+         运行：|
+             git clone https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $ GITHUB_WORKSPACE / SGSI-build-tool
+           
+       -名称：下载zip ...
+         运行：|
+            cd $ GITHUB_WORKSPACE / SGSI-build-tool
+            mkdir ./tmp
+            axel -n $（nproc）-U“ Mozilla / 5.0” $ ROM_URL -o“ $ GITHUB_WORKSPACE / SGSI-build-tool / tmp / $ ZIP_NAME” || wget -U“ Mozilla / 5.0” $ ROM_URL -O“ $ GITHUB_WORKSPACE / SGSI-build-tool / tmp / $ ZIP_NAME”
+            echo“ zip_file：$（ls” $ GITHUB_WORKSPACE / SGSI-build-tool / tmp /“）”
+            
+       -名称：安装工具实用程序...
+         如果：env.SETUP =='true'
+         运行：|
+            sudo sed -i's / USE_MIRROR_FOR_PIP \ = true / USE_MIRROR_FOR_PIP \ = false /'$ GITHUB_WORKSPACE / SGSI-build-tool / setup.sh
+            须藤bash $ GITHUB_WORKSPACE / SGSI-build-tool / setup.sh
+            sudo apt-get -y --purge删除“ adoptopenjdk-11-hotspot”
+            Java版本
+            
+       -名称：Building AB DEVICES SGSI ...
+         如果：env.BUILD_TYPE =='AB'|| env.BUILD_TYPE =='ab'
+         运行：|
+            须藤bash $ GITHUB_WORKSPACE / SGSI-build-tool / make.sh --AB $ OS_TYPE $ ZIP_NAME --fix-bug
+       -名称：仅限A级设备SGSI ...
+         如果：env.BUILD_TYPE =='仅一个'
+         运行：|
+            sudo bash $ GITHUB_WORKSPACE / SGSI-build-tool / make.sh-仅$ OS_TYPE $ ZIP_NAME --fix-bug     
+       -名称：重新包装输出文件...
+         运行：|            
+             cd $ GITHUB_WORKSPACE / SGSI-build-tool
+             密码
+             zip -r $ REPACK_NAME ./SGSI/*
+             ls“ $ REPACK_NAME”
+       -名称：将SGSI上传到WeTransfer ...
+         如果：env.upload_WeTransfer =='true'
+         运行：|
+           cd $ GITHUB_WORKSPACE / SGSI-build-tool
+           密码
+           ls“ $ REPACK_NAME”
+           curl -sL https://git.io/文件传输| SH
+           ./湿转移./$REPACK_NAME
+       -名称：将SGSI上传到action-gh-release ...
+         如果：env.upload_action-gh-release =='true'
+         用途：softprops / action-gh-release @ v1
+         与：
+           文件：$ {{github.workspace}} / SGSI-build-tool / $ {{env.REPACK_NAME}}
+           名称：xiaoxinSGSI-$ {{env.OS_TYPE}}-$ {{env.BUILD_TYPE}}-Android $ {{env.VERSION}}-解压
+           tag_name：12
+           ＃身体：使用动作自动调整
+         env：
+            GITHUB_TOKEN：$ {{ secrets.GITHUB_TOKEN }}  
